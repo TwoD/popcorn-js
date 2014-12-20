@@ -4,8 +4,7 @@
   var
 
   CURRENT_TIME_MONITOR_MS = 16,
-  EMPTY_STRING = "",
-  messageListeners = {};
+  EMPTY_STRING = "";
 
   // Utility wrapper around postMessage interface
   function SolidtangoPlayer( solidtangoIFrame ) {
