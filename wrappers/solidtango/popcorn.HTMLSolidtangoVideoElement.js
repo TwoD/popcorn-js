@@ -31,7 +31,7 @@
       solidtangoIFrame.contentWindow.postMessage( JSON.stringify(data), url );
     }
 
-    var methods = ( "ready playing togglePlay seek position" ).split(" ");
+    var methods = ( "ready playing togglePlay seek position duration volume" ).split(" ");
     methods.forEach( function( method ) {
       self[ method ] = function (arg0) {
         sendMessage(method, arg0);
@@ -119,15 +119,16 @@
       playerReadyCallbacks.unshift( callback );
     }
 
+    // Callback for 'ready' message in runtime message handler.
     function onPlayerReady( event ) {
+      // Ask the player how long the video is before doing anything else.
+      getDuration();
+    }
 
-      // There's no duration metadata, so fake that for now.
-      // Must use NaN or Popcorn stops running events once past the last one.
-      var newDuration = NaN;
+    // Callback for 'duration' message in runtime message handler.
+    function updateDuration(newDuration) {
       var oldDuration = impl.duration;
-      //if( oldDuration !== newDuration ) {
-      if (!reportedDuration) {
-        reportedDuration = true;
+      if( oldDuration !== newDuration ) {
         impl.duration = newDuration;
         self.dispatchEvent( "durationchange" );
 
@@ -160,16 +161,14 @@
         playerReadyCallbacks[ i ]();
         delete playerReadyCallbacks[ i ];
       }
-
     }
 
-    // Currently not used.
     function getDuration() {
       if( !playerReady ) {
         // Queue a getDuration() call so we have correct duration info for loadedmetadata
         addPlayerReadyCallback( function() { getDuration(); } );
       }
-      //player.getDuration();
+      player.duration();
     }
 
     function destroyPlayer() {
@@ -412,8 +411,7 @@
         });
         return;
       }
-      console.warn('Ignoring set volume call');
-      //player.setVolume( aValue );
+      player.volume( aValue );
       self.dispatchEvent( "volumechange" );
     }
 
@@ -508,6 +506,9 @@
       }
 
       switch(data.func){
+        case "duration":
+          updateDuration(parseFloat(data.args, 10));
+        break;
         case "ready":
           playerReady = data.args;
           if (playerReady) {
